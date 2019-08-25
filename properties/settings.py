@@ -35,7 +35,7 @@ CONCURRENT_REQUESTS = 16
 # See https://docs.scrapy.org/en/latest/topics/settings.html#download-delay
 # See also autothrottle settings and docs
 # DOWNLOAD_TIMEOUT = 10
-# DOWNLOAD_DELAY = 5
+# DOWNLOAD_DELAY = 1.5
 # The download delay setting will honor only one of:
 # 下载延迟只会使用下面的其中一个,IP为非0时，DOMAIN不起作用
 # CONCURRENT_REQUESTS_PER_DOMAIN = 16
