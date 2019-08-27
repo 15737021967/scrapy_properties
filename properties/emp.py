@@ -14,7 +14,7 @@ if __name__ == "__main__":
         "mongodb+srv://x-tjl:0921shtjl1208@person-t-qrqtw.mongodb.net/test?retryWrites=true&w=majority")
     db = conn.scrapy_items
     collection = db.IP
-    res = collection.remove({'status': '透明'})
+    res = collection.remove({'type': 'HTTP'})
 # from time import sleep, time
 # import threading
 # from random import randint

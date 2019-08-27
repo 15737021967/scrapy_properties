@@ -141,14 +141,9 @@ class GetIP(object):
         }
 
     def judge_ip(self, ip):
-        if ip['type'] == 'HTTP':
-            proxy_dict = {
-                'http': 'http://%s:%s' % (ip['ip'], ip['port']),
-            }
-        else:
-            proxy_dict = {
-                'https': 'https://%s:%s' % (ip['ip'], ip['port']),
-            }
+        proxy_dict = {
+            'http': 'http://%s:%s' % (ip['ip'], ip['port']),
+        }
         try:
             html = requests.get('https://hao.360.com/', headers=self.headers, proxies=proxy_dict,
                                 timeout=5)
@@ -170,7 +165,7 @@ class GetIP(object):
         ])
         for ip in ip_info:
             if self.judge_ip(ip):
-                return '%s://%s:%s' % (ip['type'], ip['ip'], ip['port'])
+                return '%s://%s:%s' % (ip['type'].lower() or 'https', ip['ip'], ip['port'])
             else:
                 self.delete_ip(ip)
                 return self.get_random_ip()
