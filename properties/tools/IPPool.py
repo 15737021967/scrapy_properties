@@ -8,15 +8,18 @@
 import requests
 import pymongo
 import threading
+import time
 from requests.exceptions import HTTPError
 from datetime import datetime
 from lxml.html import fromstring
 
 
 class DownLoad(object):
-    def __init__(self, proxy=None, headers=None):
-        self.proxy = proxy
-        self.headers = headers
+    def __init__(self, proxy=None, header=None, delay=5):
+        self.proxy = proxy or GetIP()
+        self.headers = header
+        self.delay = delay
+        self.date = time.time()
         self.client = pymongo.MongoClient(
             'mongodb+srv://x-tjl:0921shtjl1208@person-t-qrqtw.mongodb.net/test?retryWrites=true&w=majority'
         )
@@ -34,18 +37,35 @@ class DownLoad(object):
                 else:
                     print(ip)
                     try:
-                        self.db['IP'].insert_one(ip)
+                        ip_in_db = self.db['IP'].find({'ip': ip['ip'], 'port': ip['port']})
+                        if ip_in_db.count() == 1:
+                            self.db['IP'].update(
+                                {'ip': ip['ip'], 'port': ip['port']},
+                                {
+                                    'speed': ip['speed'],
+                                    'connect_time': ip['connect_time'],
+                                    'verification_time': ip['verification_time'],
+                                }
+                            )
+                        else:
+                            self.db['IP'].insert_one(ip)
                     except Exception as e:
                         print(e)
 
     def close(self):
         self.client.close()
+        self.proxy.close()
 
     def downloader(self, url):
         try:
-            html = requests.get(url, headers=self.headers)
-        except HTTPError as err:
-            print(err)
+            delay_time = time.time() - self.date
+            if delay_time < self.delay:
+                time.sleep(delay_time)
+            proxy = {'http': self.proxy.get_random_ip()}
+            html = requests.get(url, headers=self.headers, proxies=proxy)
+            self.date = time.time()
+        except HTTPError as error:
+            print(error)
         except Exception as e:
             print(e)
         else:
@@ -78,8 +98,8 @@ class DownLoad(object):
                 print(ip_info['ip'], end='')
                 yield None
 
-    def verification_ip(self, ip, port, type):
-        if type == 'HTTP':
+    def verification_ip(self, ip, port, ip_type):
+        if ip_type == 'HTTP':
             proxy_dict = {
                 'http': 'http://%s:%s' % (ip, port),
             }
@@ -90,8 +110,8 @@ class DownLoad(object):
         try:
             html = requests.get('https://hao.360.com/', headers=self.headers, proxies=proxy_dict,
                                 timeout=5)
-        except HTTPError as err:
-            print(err)
+        except HTTPError as error:
+            print(error)
             return False
         except Exception as e:
             print(e)
@@ -104,8 +124,8 @@ class DownLoad(object):
 
 
 def runspider(downloader, base_url, start_url, end_url):
-    for i in range(start_url, end_url):
-        url = base_url + str(i)
+    for num in range(start_url, end_url):
+        url = base_url + str(num)
         downloader(url)
 
 
@@ -113,7 +133,7 @@ class GetIP(object):
 
     def __init__(self):
         self.client = pymongo.MongoClient(
-            'mongodb+srv://x-tjl:0921shtjl1208@person-t-qrqtw.mongodb.net/test?retryWrites=true&w=majority'
+            'mongodb+srv://x-tjl:0921shtjl1208@person-t-qrqtw.mongodb.net/test?retryWrites=true&w=majority',
         )
         self.db = self.client['scrapy_items']
         self.headers = {
@@ -132,8 +152,8 @@ class GetIP(object):
         try:
             html = requests.get('https://hao.360.com/', headers=self.headers, proxies=proxy_dict,
                                 timeout=5)
-        except HTTPError as err:
-            print(ip['ip'], err)
+        except HTTPError as error:
+            print(ip['ip'], error)
             return False
         except Exception as e:
             print(ip['ip'], e)
@@ -166,34 +186,37 @@ if __name__ == "__main__":
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.142 Safari/537.36',
     }
-    # D = DownLoad(headers=headers, proxy=None)
-    # nn_thread_list = [
-    #     threading.Thread(target=runspider, args=(D, 'https://www.xicidaili.com/nn/', 759 * i + 1, 759 * (i + 1) + 1))
-    #     for i in range(5)
-    # ]
+    D = DownLoad(header=headers, proxy=None)
+    nn_thread_list = [
+        threading.Thread(target=runspider, args=(D, 'https://www.xicidaili.com/nn/', 1265 * i + 1, 1265 * (i + 1) + 1))
+        for i in range(3)
+    ]
     # nt_thread_list = [
     #     threading.Thread(target=runspider, args=(D, 'https://www.xicidaili.com/nt/', 147 * i + 1, 147 * (i + 1) + 1))
     #     for i in range(5)
     # ]
     #
-    # [thread.start() for thread in nn_thread_list]
+    [thread.start() for thread in nn_thread_list]
     # [thread.start() for thread in nt_thread_list]
-    # [thread.join() for thread in nn_thread_list]
+    [thread.join() for thread in nn_thread_list]
     # [thread.join() for thread in nt_thread_list]
-    # D.close()
-    proxy_dict = {
-        'http': 'http://118.178.182.47:23687',
-        'https': 'https://140.143.48.49:1080',
-    }
-    get_ip = GetIP()
-    for i in range(5):
-        ip_port = get_ip.get_random_ip()
-
-    get_ip.close()
-    try:
-        html = requests.get('https://hao.360.com/', headers=headers, proxies=proxy_dict,
-                            timeout=5)
-    except HTTPError as err:
-        print(err)
-    else:
-        print(html.status_code)
+    D.close()
+    # proxy = {
+    #     'http': 'http://118.178.182.47:23687',
+    #     'https': 'https://140.143.48.49:1080',
+    # }
+    # get_ip = GetIP()
+    # for i in range(5):
+    #     ip_port = get_ip.get_random_ip()
+    #
+    # get_ip.close()
+    # try:
+    #     html_text = requests.get('https://hao.360.com/', headers=headers, proxies=proxy, timeout=5)
+    # except HTTPError as err:
+    #     print(err)
+    # else:
+    #     print(html_text.status_code)
+    # date = datetime.now()
+    # t = time.time()
+    # time.sleep(3)
+    # print(time.time()-t, datetime.now()-date)

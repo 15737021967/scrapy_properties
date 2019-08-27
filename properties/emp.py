@@ -13,9 +13,8 @@ if __name__ == "__main__":
     conn = pymongo.MongoClient(
         "mongodb+srv://x-tjl:0921shtjl1208@person-t-qrqtw.mongodb.net/test?retryWrites=true&w=majority")
     db = conn.scrapy_items
-    collection = db.lagou
-    res = collection.find().count()
-    print(res)
+    collection = db.IP
+    res = collection.remove({'status': '透明'})
 # from time import sleep, time
 # import threading
 # from random import randint
