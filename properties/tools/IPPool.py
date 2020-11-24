@@ -21,7 +21,7 @@ class DownLoad(object):
         self.delay = delay
         self.date = time.time()
         self.client = pymongo.MongoClient(
-            'mongodb+srv://x-tjl:0921shtjl1208@person-t-qrqtw.mongodb.net/test?retryWrites=true&w=majority'
+            ''
         )
         self.db = self.client['scrapy_items']
 
